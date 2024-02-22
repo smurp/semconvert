@@ -1,0 +1,23 @@
+{
+  "name": "spaceshipearthapp",
+  "version": "1.0.0",
+  "description": "Hey, who is driving this thing?",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/smurp/spaceshipearthapp.git"
+  },
+  "keywords": [
+    "semweb",
+    "dashboard"
+  ],
+  "author": "Shawn Murphy <smurp@smurp.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/smurp/spaceshipearthapp/issues"
+  },
+  "homepage": "https://github.com/smurp/spaceshipearthapp#readme"
+}
