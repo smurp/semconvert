@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+
+function req(m) {
+  return require(path.join(__dirname, 'node_modules', m));
+}
+const path = require('path');
+const { Command } = require('commander');
+var { fs } = require('fs');
+var { N3 } = require('n3');
+
+console.log({Command, fs, N3});
+var ext2type = {
+    "nq": 'application/n-quads',
+    "ttl": 'application/x-turtle',
+    "owl": 'application/rdf+xml',
+    "trig": "application/trig"
+};
+const pipeDelimExts = Object.keys(ext2type).join('|');
+/*
+let default_prefixes = {xsd: 'http://www.w3.org/2001/XMLSchema#',
+                        rdfs: 'http://www.w3.org/2000/01/rdf-schema#'};
+*/
+
+let default_prefixes = {
+  xsd: 'http://www.w3.org/2001/XMLSchema#',
+  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+  nrn: 'http://nooron.com/__/'
+};
+
+
+function AmalgamatedGraphWriter(options) {
+  const NO_GRAPH_URI = " NO GRAPH";
+  options = options || {};
+  var writer = new N3.Writer(options);
+  var graphs = {};
+  var deferred_prefixes = {};
+  options.prefixes = deferred_prefixes;
+  if (options.verbose && options.amalgamated) console.log("# RUNNING AMALGAMATED");
+  function snarf(err, triple, prefixes) {
+    if (err) console.log(err);
+    if (prefixes) {
+      /*
+        FIXME This is a source of potential bugs!
+
+	If the source file has prefixes interspersed amoung the triples
+	AND a prefix gets changed after it has been used by a triple
+	THEN all the output triples will get the last expansion provided.
+      */
+      if (options.verbose) console.log("# DEFER PREFIXES", prefixes);
+      options.prefixes = prefixes;
+    }
+    if (triple) {
+      if (options.amalgamated || true) {
+	let graph_uri = triple.graph || NO_GRAPH_URI;
+        if (!graphs[graph_uri]) {
+          if (options.verbose) console.log("# DEFER GRAPH", triple.graph)
+          graphs[graph_uri] = [];
+        }
+	graphs[graph_uri].push(triple);
+      } else {
+	if (options.verbose) console.log("# ADD TRIPLE")
+	writer.addTriple(triple);
+      }
+    } else {
+      write();
+    }
+  }
+  function write() {
+    Object.keys(default_prefixes).forEach(function(k) {
+      var v = default_prefixes[k];
+      options.prefixes[k] = v;
+    });
+    if (options.amalgamated || true) {
+      if (options.verbose) console.log("# new N3.Writer() options:",options);
+      writer = new N3.Writer(options);
+    } else {
+      writer.addPrefixes(options.prefixes);
+    }
+    if (options.verbose) console.log("# addPrefixes()", options.prefixes);
+    for (var graph_uri in graphs) {
+      if (graphs.hasOwnProperty(graph_uri)) {
+        if (options.verbose) console.log("# addTriples() for graph:", graph_uri);
+	graphs[graph_uri].forEach(function(triple) {
+          writer.addTriple(triple);
+	});
+      }
+	 }
+    writer.end(function(err, res){console.log(res)});
+  }
+  return {read: snarf}
+}
+
+
+function semconvert(infile, outfile, opts) {
+  console.log({infile, outfile, opts});
+  //process.exit();
+
+  var to_ext = outfile.split('.')[-1];
+  var to_type = ext2type[to_ext];
+
+  console.log({infile, outfile, to_ext, to_type});
+
+  let largs = {comments: true};
+  largs = {};  // REMOVE once the Parser can handle the Lexer emitting comments
+  let parser = new N3.Parser({lexer: new N3.Lexer(largs)});
+  let inputStream =  fs.createReadStream(infile);
+
+
+  let options = {verbose: 0}
+  if (to_type) {
+    options.format = to_type;
+    options.amalgamated = to_ext == 'trig';
+  }
+  //console.log("# options",options);
+  let agwriter = AmalgamatedGraphWriter(options);
+  parser.parse(inputStream, agwriter.read);
+}
+
+const program = new Command();
+
+program
+  .description("Converts between various RDF and RDF-star syntaxes such as "
+               + pipeDelimExts)
+  .argument("<infile>", "the input file")
+  .argument("<outfile>", "the output file")
+  .option('-o, --outformat <OF>', "the output format")
+  .option('-i, --informat <IF>', "the input format")
+  .action((infile, outfile) => {semconvert(infile, outfile, program.opts())});
+
+program.parse();
