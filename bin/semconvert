@@ -39,13 +39,17 @@ function ensure_mimetypes(map) {
   }
 }
 ensure_mimetypes({'application/n-quads':['nq'],
-                  'application/n-triples':['nt']})
+                  'application/n-triples':['nt'],
+                  'application/trig':['trig'],
+                 })
 
 function semconvert(infile, outfile, options) {
   const infType = mime.lookup(infile);
   const outType = mime.lookup(outfile);
-  const inputFormat = options.informat || infType || 'text/turtle';
-  const outputFormat = options.outformat || outType || 'application/n-triples';
+  const inputFormat = options.informat ||
+        ((infile!='-') ? infType : 'text/turtle');
+  const outputFormat = options.outformat ||
+        ((outfile!='-') ? outType : 'application/n-triples');
   console.log({options,
                infile, infType, inputFormat,
                outfile, outType, outputFormat});
@@ -88,7 +92,8 @@ function semconvert(infile, outfile, options) {
 
 program
   .name('semconvert')
-  .description('Converts between various RDF and RDF-star syntaxes such as nq|nt|rdf|trig|ttl')
+  .description(
+    'Converts between various RDF and RDF-star syntaxes such as nq|nt|rdf|trig|ttl')
   .argument('<infile>', 'the input file')
   .argument('<outfile>', 'the output file')
   .option('-o, --outformat <OF>', 'the output format')
