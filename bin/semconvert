@@ -40,7 +40,7 @@ function ensure_mimetypes(map) {
 }
 ensure_mimetypes({'application/n-quads':['nq'],
                   'application/n-triples':['nt'],
-                  'application/trig':['trig'],
+                  'application/trig':['trig']
                  })
 
 function semconvert(infile, outfile, options) {
@@ -50,9 +50,7 @@ function semconvert(infile, outfile, options) {
         ((infile!='-') ? infType : 'text/turtle');
   const outputFormat = options.outformat ||
         ((outfile!='-') ? outType : 'application/n-triples');
-  console.log({options,
-               infile, infType, inputFormat,
-               outfile, outType, outputFormat});
+  const {verbose, noprefix} = options;
 
   // Ensure infile exists
   if (!fs.existsSync(infile)) {
@@ -67,10 +65,23 @@ function semconvert(infile, outfile, options) {
   const parser = new Parser({ format: inputFormat });
   const writer = new Writer({ format: outputFormat });
   const quads = [];
+  const prefs = [];
+  const quad_handler = () => {};
+  const pref_handler = () => {};
 
   parser.parse(inputData, (error, quad, prefixes) => {
+    if (prefixes) {
+      if (!noprefix) {
+        writer.addPrefixes(prefixes);
+      }
+      pref_handler(prefixes);
+      prefs.push(prefixes); // after pref_handle so it can detect new
+      verbose && console.error({prefixes});
+    }
     if (quad) {
-      quads.push(quad);
+      quad_handler(quad);
+      quads.push(quad); // after quad_handler so new ones can be noticed
+      verbose && console.error({quad});
     } else if (error) {
       console.error('Error parsing input data:', error);
       process.exit(1);
@@ -82,13 +93,22 @@ function semconvert(infile, outfile, options) {
           console.error('Error writing output data:', error);
           process.exit(1);
         } else {
-          fs.writeFileSync(outfile, result);
-          console.log(`Conversion complete. Output written to "${outfile}"`);
+          if (outfile=='-') {
+            console.log(result);
+          } else {
+            fs.writeFileSync(outfile, result);
+          }
         }
-        });
+        verbose && console.error({
+          options,
+          infile, infType, inputFormat,
+          outfile, outType, outputFormat});
+      });
     }
   });
 }
+
+
 
 program
   .name('semconvert')
@@ -98,6 +118,8 @@ program
   .argument('<outfile>', 'the output file')
   .option('-o, --outformat <OF>', 'the output format')
   .option('-i, --informat <IF>', 'the input format')
+  .option('-v, --verbose', 'show details')
+  .option('-n, --noprefix', 'do not output prefixes')
   .action(semconvert);
 
 program.parse();
