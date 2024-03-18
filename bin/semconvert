@@ -3,7 +3,7 @@
 const { program } = require('commander');
 const fs = require('fs');
 const mime = require('mime');
-const { Parser, Writer } = require('n3');
+const { Parser, Writer, Store } = require('n3');
 const path = require('path');
 
 /*
@@ -40,30 +40,159 @@ function ensure_mimetypes(map) {
 }
 ensure_mimetypes({'application/n-quads':['nq'],
                   'application/n-triples':['nt'],
-                  'application/trig':['trig']
+                  'application/trig':['trig'],
+                  'application/trig+star':['trig','trig+star'],
+                  'application/rdf+star': ['rdf','rdf+star'],
+                  'application/ttl+star': ['ttl','ttl+star'],
+                  'application/n-quads+star': ['nq','nq+star'],
+                  'application/vnd.org-mode': ['org'],
+                  'application/json': ['json'],
+                  'text/csv': ['csv'],
+                  'text/tab-separated-values': ['tsv'] // also 'tab'
                  })
 
+class UniqueArray extends Array {
+  pushIndexOf(key) {
+    if (this.indexOf(key)==-1) {
+      this.push(key);
+    }
+    return this.indexOf(key);
+  }
+}
+
+class TableWriter {
+  constructor(options={}) {
+    this.options = options;
+    this.store = new Store();
+    this.line_prefix = '';
+    this.line_postfix = '';
+    this.col_delim = '';
+    this.col_prefix = '';
+    this.col_postfix = '';
+  }
+  addQuads(quads) {
+    this.store.addQuads(quads);
+  }
+  addPrefixes(prefixes) {
+    this.store.add(prefixes);
+  }
+  getChart() {
+    let labels = new UniqueArray();
+    let chart = {datasets: []}
+    for (const subj of this.store.getSubjects()) {
+      if (subj.value == '') continue; // skips DefaultGraph
+      let row = {label:subj.value, data:[]};
+      for (const pred of this.store.getPredicates(subj, null, null)) {
+        if (pred.value == '') continue; // skips DefaultGraph
+        var colIdx = labels.pushIndexOf(pred.value);
+        for (const quad of this.store.getQuads(subj, pred, null)) {
+          row.data[colIdx] = quad.object.value;
+        }
+      }
+      chart.datasets.push(row);
+    }
+    chart.labels = Array.from(labels.values());
+    return chart;
+  }
+  makeLine(vals) {
+    // this really should iterate through the values so they can be escaped!!!
+    return this.line_prefix
+      + (vals.length ? this.col_prefix : '')  // only if there are vals
+      + vals.join(this.col_prefix + this.col_delim + this.col_postfix)
+      + (vals.length ? this.col_postfix : '') // only if there are vals
+      + this.line_postfix
+      + "\n";
+  }
+  decorateTable() {
+    let chart = this.getChart();
+    let table = this.makeLine([''].concat(chart.labels));
+    for (const row of chart.datasets) {
+      table += this.makeLine([row.label].concat(row.data));
+    }
+    return table;
+  }
+  end(cb) {
+    let error;
+    let result = this.decorateTable();
+    cb(error, result);
+  }
+  FUTURE__get_or_make_id_for_quad(quad) {
+    return [quad.subject, quad.predicate, quad.object].join(' ');
+  }
+}
+class ChartData extends TableWriter {
+  decorateTable() {
+    return JSON.stringify(this.getChart(), null, 4);
+  }
+}
+class OrgModeTable extends TableWriter {
+  constructor(options={}) {
+    super(options);
+    this.line_prefix = '|';
+    this.line_postfix = '|';
+    this.col_delim = '|';
+  }
+}
+class TabSeparatedTable extends TableWriter {
+  constructor(options={}) {
+    super(options);
+    this.col_delim = "\t";
+  }
+}
+class CommaSeparatedTable extends TableWriter {
+  constructor(options={}) {
+    super(options);
+    this.col_delim = ',';
+    this.col_prefix = '"';
+    this.col_postfix = '"';
+  }
+}
+
 function semconvert(infile, outfile, options) {
-  const infType = mime.lookup(infile);
-  const outType = mime.lookup(outfile);
-  const inputFormat = options.informat ||
-        ((infile!='-') ? infType : 'text/turtle');
-  const outputFormat = options.outformat ||
-        ((outfile!='-') ? outType : 'application/n-triples');
-  const {verbose, noprefix} = options;
+  // parameter > extension > default
+  const {verbose, noprefix, informat, outformat, dryrun} = options;
+  const inputFormat = (informat && mime.lookup(informat))
+    || (infile!='-' && mime.lookup(infile))
+    || 'text/turtle';
+  const outputFormat = (outformat && mime.lookup(outformat))
+    || (outfile!='-' && mime.lookup(outfile))
+    || 'text/turtle';
+
+  // Parse the input data
+  const parser = new Parser({ format: inputFormat });
+  let writer;
+  switch (outputFormat) {
+  case 'application/vnd.org-mode':
+    writer = new OrgModeTable({ format: outputFormat });
+    break;
+  case 'text/tab-separated-values':
+    writer = new TabSeparatedTable({ format: outputFormat });
+    break;
+  case 'text/csv':
+    writer = new CommaSeparatedTable({ format: outputFormat });
+    break;
+  case 'application/json':
+    writer = new ChartData({ format: outputFormat });
+    break;
+  default:
+    writer = new Writer({ format: outputFormat });
+  }
+
+  (dryrun || verbose) && console.error({
+    options, writer,
+    infile, informat, inputFormat,
+    outfile, outformat, outputFormat});
 
   // Ensure infile exists
   if (!fs.existsSync(infile)) {
     console.error(`Input file "${infile}" not found.`);
     process.exit(1);
   }
+  if (dryrun) process.exit(1);
 
   // Read the input file
   const inputData = fs.readFileSync(infile, 'utf8');
-
-  // Parse the input data
-  const parser = new Parser({ format: inputFormat });
-  const writer = new Writer({ format: outputFormat });
+  
   const quads = [];
   const prefs = [];
   const quad_handler = () => {};
@@ -99,27 +228,29 @@ function semconvert(infile, outfile, options) {
             fs.writeFileSync(outfile, result);
           }
         }
-        verbose && console.error({
-          options,
-          infile, infType, inputFormat,
-          outfile, outType, outputFormat});
       });
     }
   });
 }
 
-
-
 program
   .name('semconvert')
   .description(
-    'Converts between various RDF and RDF-star syntaxes such as nq|nt|rdf|trig|ttl')
+    ['Converts between various RDF and RDF-star syntaxes such as'
+     ,'  nq|nt|rdf|trig|ttl|ttl+star|trig+star|rdf+star'
+     ,'and can also convert to'
+     ,'  application/vnd.org-mode (.org)'
+     ,'  application/json (.json)'
+     ,'  text/csv (.csv)'
+     ,'  text/tab-separated-values (.tsv)'
+    ].join('\n'))
   .argument('<infile>', 'the input file')
-  .argument('<outfile>', 'the output file')
+  .argument('<outfile>', 'the output file (or - for stdout)')
   .option('-o, --outformat <OF>', 'the output format')
   .option('-i, --informat <IF>', 'the input format')
   .option('-v, --verbose', 'show details')
   .option('-n, --noprefix', 'do not output prefixes')
+  .option('-d, --dryrun', 'show what will happen but do nothing')
   .action(semconvert);
 
 program.parse();
