@@ -138,7 +138,7 @@ class CommaSeparatedTable extends TableWriter {
   }
 }
 
-function ruleApplies(passOrDenyRegexList, value) {
+function covers(passOrDenyRegexList, value) {
   for (const re of passOrDenyRegexList) {
     const regex = new RegExp(re);
     if (regex.test(value)) return true;
@@ -148,15 +148,11 @@ function ruleApplies(passOrDenyRegexList, value) {
 
 function isQuadPermitted(quad, options) {
   const {denySubjLike, passSubjLike, passPredLike, denyPredLike} = options;
-  if (denySubjLike || passSubjLike || passPredLike || denyPredLike ) {
-    if (denySubjLike
-        && ruleApplies(denySubjLike, quad.subject.value)) return false;
-    if (denyPredLike
-        && ruleApplies(denyPredLike, quad.predicate.value)) return false;
-    if (passSubjLike
-        && ! ruleApplies(passSubjLike, quad.subject.value)) return false;
-    if (passPredLike
-        && ! ruleApplies(passPredLike, quad.predicate.value)) return false;
+  if ((denySubjLike && covers(denySubjLike, quad.subject.value))
+      || (denyPredLike && covers(denyPredLike, quad.predicate.value))
+      || (passSubjLike && ! covers(passSubjLike, quad.subject.value))
+      || (passPredLike && ! covers(passPredLike, quad.predicate.value))) {
+    return false;
   }
   return true; // quads are permitted by default
 }
