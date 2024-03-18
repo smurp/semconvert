@@ -50,6 +50,9 @@ class TableWriter {
   addQuads(quads) {
     this.store.addQuads(quads);
   }
+  addQuad(quad) {
+    this.store.addQuad(quad);
+  }
   addPrefixes(prefixes) {
     this.store.add(prefixes);
   }
@@ -169,31 +172,22 @@ function semconvert(infile, outfile, options) {
 
   // Read the input file
   const inputData = fs.readFileSync(infile, 'utf8');
-  
-  const quads = [];
-  const prefs = [];
-  const quad_handler = () => {};
-  const pref_handler = () => {};
 
   parser.parse(inputData, (error, quad, prefixes) => {
     if (prefixes) {
       if (!noprefix) {
         writer.addPrefixes(prefixes);
       }
-      pref_handler(prefixes);
-      prefs.push(prefixes); // after pref_handle so it can detect new
       verbose && console.error({prefixes});
     }
     if (quad) {
-      quad_handler(quad);
-      quads.push(quad); // after quad_handler so new ones can be noticed
+      writer.addQuad(quad);
       verbose && console.error({quad});
     } else if (error) {
       console.error('Error parsing input data:', error);
       process.exit(1);
     } else {
       // End of input; write the output
-      writer.addQuads(quads);
       writer.end((error, result) => {
         if (error) {
           console.error('Error writing output data:', error);
