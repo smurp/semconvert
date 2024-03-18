@@ -47,9 +47,6 @@ class TableWriter {
     this.col_prefix = '';
     this.col_postfix = '';
   }
-  addQuads(quads) {
-    this.store.addQuads(quads);
-  }
   addQuad(quad) {
     this.store.addQuad(quad);
   }
@@ -141,6 +138,29 @@ class CommaSeparatedTable extends TableWriter {
   }
 }
 
+function ruleApplies(passOrDenyRegexList, value) {
+  for (const re of passOrDenyRegexList) {
+    const regex = new RegExp(re);
+    if (regex.test(value)) return true;
+  }
+  return false;
+}
+
+function isQuadPermitted(quad, options) {
+  const {denySubjLike, passSubjLike, passPredLike, denyPredLike} = options;
+  if (denySubjLike || passSubjLike || passPredLike || denyPredLike ) {
+    if (denySubjLike
+        && ruleApplies(denySubjLike, quad.subject.value)) return false;
+    if (denyPredLike
+        && ruleApplies(denyPredLike, quad.predicate.value)) return false;
+    if (passSubjLike
+        && ! ruleApplies(passSubjLike, quad.subject.value)) return false;
+    if (passPredLike
+        && ! ruleApplies(passPredLike, quad.predicate.value)) return false;
+  }
+  return true; // quads are permitted by default
+}
+
 function semconvert(infile, outfile, options) {
   // parameter > extension > default
   const {verbose, noprefix, informat, outformat, dryrun, stripUrls} = options;
@@ -195,8 +215,14 @@ function semconvert(infile, outfile, options) {
       verbose && console.error({prefixes});
     }
     if (quad) {
-      writer.addQuad(quad);
-      verbose && console.error({quad});
+      if (isQuadPermitted(quad, options)) {
+        writer.addQuad(quad);
+        verbose && console.error({quad});
+      } else {
+        const reject = 'rejected';
+        verbose && console.error({reject, quad});
+      }
+
     } else if (error) {
       console.error('Error parsing input data:', error);
       process.exit(1);
@@ -238,6 +264,10 @@ program
   .option('-d, --dryrun', 'show what will happen but do nothing')
   .option('-s, --stripUrls',
           'strip http://x.co/wtf#eg http://x.co/a/eg http://eg/ to eg')
-  .action(semconvert);
+  .option('--ds, --denySubjLike <RegEx...>', 'ignore subjects like')
+  .option('--ps, --passSubjLike <RegEx...>', 'permit subjects like')
+  .option('--dp, --denyPredLike <RegEx...>', 'ignore predicates like')
+  .option('--pp, --passPredLike <RegEx...>', 'permit predicates like')
+  .action(semconvert)
 
 program.parse();
