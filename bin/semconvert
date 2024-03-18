@@ -56,15 +56,28 @@ class TableWriter {
   addPrefixes(prefixes) {
     this.store.add(prefixes);
   }
+  stripUrl(urlStr) {
+    const url = new URL(urlStr);
+    return url.hash.replace('#','')      // the hash WITHOUT the octothorp
+      || url.pathname.split('/').at(-1)  // the last part of the path
+      || url.hostname;                   // the hostname
+  }
+  disciplineSubject(subj) {
+    return this.options.stripUrls ? this.stripUrl(subj.value) : subj.value;
+  }
+  disciplinePredicate(pred) {
+    return this.options.stripUrls ? this.stripUrl(pred.value) : pred.value;
+  }
   getChart() {
     let labels = new UniqueArray();
     let chart = {datasets: []}
     for (const subj of this.store.getSubjects()) {
       if (subj.value == '') continue; // skips DefaultGraph
-      let row = {label:subj.value, data:[]};
+      let row = {label:this.disciplineSubject(subj), data:[]};
       for (const pred of this.store.getPredicates(subj, null, null)) {
         if (pred.value == '') continue; // skips DefaultGraph
-        var colIdx = labels.pushIndexOf(pred.value);
+        var cookedPred = this.disciplinePredicate(pred);
+        var colIdx = labels.pushIndexOf(cookedPred);
         for (const quad of this.store.getQuads(subj, pred, null)) {
           row.data[colIdx] = quad.object.value;
         }
@@ -130,7 +143,7 @@ class CommaSeparatedTable extends TableWriter {
 
 function semconvert(infile, outfile, options) {
   // parameter > extension > default
-  const {verbose, noprefix, informat, outformat, dryrun} = options;
+  const {verbose, noprefix, informat, outformat, dryrun, stripUrls} = options;
   const inputFormat = (informat && mime.lookup(informat))
     || (infile!='-' && mime.lookup(infile))
     || 'text/turtle';
@@ -138,21 +151,22 @@ function semconvert(infile, outfile, options) {
     || (outfile!='-' && mime.lookup(outfile))
     || 'text/turtle';
 
-  // Parse the input data
+  // prepare parser and writer
   const parser = new Parser({ format: inputFormat });
+  const tableWriterOptions = {stripUrls};
   let writer;
   switch (outputFormat) {
   case 'application/vnd.org-mode':
-    writer = new OrgModeTable({ format: outputFormat });
+    writer = new OrgModeTable(tableWriterOptions);
     break;
   case 'text/tab-separated-values':
-    writer = new TabSeparatedTable({ format: outputFormat });
+    writer = new TabSeparatedTable(tableWriterOptions);
     break;
   case 'text/csv':
-    writer = new CommaSeparatedTable({ format: outputFormat });
+    writer = new CommaSeparatedTable(tableWriterOptions);
     break;
   case 'application/json':
-    writer = new ChartData({ format: outputFormat });
+    writer = new ChartData(tableWriterOptions);
     break;
   default:
     writer = new Writer({ format: outputFormat });
@@ -222,6 +236,8 @@ program
   .option('-v, --verbose', 'show details')
   .option('-n, --noprefix', 'do not output prefixes')
   .option('-d, --dryrun', 'show what will happen but do nothing')
+  .option('-s, --stripUrls',
+          'strip http://x.co/wtf#eg http://x.co/a/eg http://eg/ to eg')
   .action(semconvert);
 
 program.parse();
