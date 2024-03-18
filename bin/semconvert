@@ -6,30 +6,6 @@ const mime = require('mime');
 const { Parser, Writer, Store } = require('n3');
 const path = require('path');
 
-/*
-var ext2type = {
-  'nq': 'application/n-quads',
-  'nt': 'application/n-triples',
-  'ttl': 'application/turtle',
-  'owl': 'application/rdf+xml',
-  'rdf': 'application/rdf+xml',
-  'trig': 'application/trig',
-  'n3': 'text/n3' // https://www.w3.org/TeamSubmission/n3/
-};
-
-const type2ext = {
-  'N-Triples': 'nt',
-  'application/n-quads': 'nq',
-  'application/n-triples': 'nt',
-  'application/quads': 'nq',
-  'application/rdf+xml': 'rdf',
-  'application/triples': 'nt',
-  'application/turtle': 'ttl',
-  'application/x-turtle': 'ttl',
-  'text/n3': 'n3'
-};
-*/
-
 function ensure_mimetypes(map) {
   for (var type in map) {
     var exts = map[type];
