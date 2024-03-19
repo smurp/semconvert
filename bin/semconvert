@@ -41,6 +41,7 @@ ensure_mimetypes({'application/n-quads':['nq'],
                   'text/tab-separated-values': ['tsv'] // also 'tab'
                  });
 
+
 function semconvert_cli(infile, outfile, options) {
   // parameter > extension > default
   const {verbose, noprefix, informat, outformat, dryrun, stripUrls} = options;
