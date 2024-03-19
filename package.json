@@ -1,30 +1,31 @@
 {
-  "name": "spaceshipearthapp",
+  "name": "semconvert",
   "version": "1.0.0",
-  "description": "Hey, who is driving this thing?",
+  "description": "transform and filter RDF content",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/smurp/spaceshipearthapp.git"
+    "url": "git+ssh://git@github.com/smurp/semconvert.git"
   },
   "keywords": [
     "semweb",
-    "dashboard"
+    "n3",
+    "rdf",
+    "semantic web"
   ],
   "author": "Shawn Murphy <smurp@smurp.com>",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/smurp/spaceshipearthapp/issues"
+    "url": "https://github.com/smurp/semconvert/issues"
   },
-  "homepage": "https://github.com/smurp/spaceshipearthapp#readme",
+  "homepage": "https://github.com/smurp/semconvert#readme",
   "dependencies": {
     "commander": "^12.0.0",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
+    "mime": "^4.0.1",
     "n3": "^1.17.2"
   }
 }
