@@ -19,6 +19,9 @@
   ],
   "author": "Shawn Murphy <smurp@smurp.com>",
   "license": "GPL-3.0",
+  "bin": {
+    "semconvert": "bin/semconvert"
+  },
   "bugs": {
     "url": "https://github.com/smurp/semconvert/issues"
   },
