@@ -57,30 +57,48 @@ function semconvert_cli(infile, outfile, options) {
     infile, informat, inputFormat,
     outfile, outformat, outputFormat});
 
-  // Ensure infile exists
-  if (!fs.existsSync(infile)) {
+  // Ensure infile exists (if it's not stdin)
+  if (infile !== '-' && !fs.existsSync(infile)) {
     console.error(`Input file "${infile}" not found.`);
     process.exit(1);
   }
-  if (dryrun) process.exit(1);
 
-  // Read the input file
-  const inputData = fs.readFileSync(infile, 'utf8');
+  if (dryrun) process.exit(1); // bail before acting
 
-  const callback = (error, result) => {
-    if (error) {
-      console.error('Error writing output data:', error);
-      process.exit(1);
-    } else {
-      if (outfile=='-') {
-        console.log(result);
-      } else {
-        fs.writeFileSync(outfile, result);
-      }
-    }
+  // Read the input data
+  let inputData;
+  if (infile === '-') {
+    // Read input data from stdin
+    const chunks = [];
+    process.stdin.on('data', (chunk) => chunks.push(chunk));
+    process.stdin.on('end', () => {
+      inputData = Buffer.concat(chunks).toString('utf8');
+      processData(inputData);
+    });
+  } else {
+    // Read input data from file
+    inputData = fs.readFileSync(infile, 'utf8');
+    processData(inputData);
   }
-  semconvert(inputData, callback,
-             Object.assign(options, {inputFormat, outputFormat}));
+
+  function processData(inputData) {
+    const callback = (error, result) => {
+      if (error) {
+        console.error('Error writing output data:', error);
+        process.exit(1);
+      } else {
+        if (outfile === '-') {
+          console.log(result);
+        } else {
+          fs.writeFileSync(outfile, result);
+        }
+      }
+    };
+
+    semconvert(inputData, callback,
+      Object.assign(options, { inputFormat, outputFormat })
+    );
+  }
 }
 
 program
@@ -94,10 +112,10 @@ program
      ,'  text/csv (.csv)'
      ,'  text/tab-separated-values (.tsv)'
     ].join('\n'))
-  .argument('<infile>', 'the input file')
+  .argument('<infile>', 'the input file (or - for stdin)')
   .argument('<outfile>', 'the output file (or - for stdout)')
-  .option('-o, --outformat <OF>', 'the output format')
-  .option('-i, --informat <IF>', 'the input format')
+  .option('-o, --outformat <OF>', 'the output format, default text/turtle')
+  .option('-i, --informat <IF>', 'the input format, default text/turtlestar')
   .option('-v, --verbose', 'show details')
   .option('-n, --noprefix', 'do not output prefixes')
   .option('-d, --dryrun', 'show what will happen but do nothing')
@@ -142,10 +160,11 @@ Examples:
        |S3|  6.0|
     Subj or Pred can be passed or denied by space-delimited RegExes
 
-  semconvert --ps S2 --pp Pred1 Pred3 -oorg -s input.ttl -
+  semconvert --ps S2 --pp Pred1 Pred3 -oorg -s - - < input.ttl
        |  |Pred1|Pred3|
        |S2|  3.0|  two|
     Same as previous example but abbreviated and pass/deny inverted!
+    Also read from stdin and rely on the informat default of 
 `);
 
 program.parse();
