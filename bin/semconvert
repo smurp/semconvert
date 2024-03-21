@@ -164,7 +164,7 @@ Examples:
        |  |Pred1|Pred3|
        |S2|  3.0|  two|
     Same as previous example but abbreviated and pass/deny inverted!
-    Also read from stdin and rely on the informat default of 
+    Also read from stdin and, in this case, rely on the informat default.
 `);
 
 program.parse();
