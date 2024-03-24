@@ -127,6 +127,8 @@ program
   .option('--ps, --passSubjLike <RegEx...>', 'permit subjects like')
   .option('--dp, --denyPredLike <RegEx...>', 'ignore predicates like')
   .option('--pp, --passPredLike <RegEx...>', 'permit predicates like')
+  .option('--do, --denyObjLike <RegEx...>', 'ignore objects like')
+  .option('--po, --passObjLike <RegEx...>', 'permit objects like')
   .action(semconvert_cli)
   .addHelpText('after', `
 Examples:
