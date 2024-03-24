@@ -38,7 +38,8 @@ ensure_mimetypes({'application/n-quads':['nq'],
                   'application/vnd.org-mode': ['org'],
                   'application/json': ['json'],
                   'text/csv': ['csv'],
-                  'text/tab-separated-values': ['tsv'] // also 'tab'
+                  'text/tab-separated-values': ['tsv'], // also 'tab'
+                  'text/vnd.graphviz': ['dot']
                  });
 
 
@@ -111,6 +112,7 @@ program
      ,'  application/json (.json)'
      ,'  text/csv (.csv)'
      ,'  text/tab-separated-values (.tsv)'
+     ,'  text/vnd.graphviz (.dot)'
     ].join('\n'))
   .argument('<infile>', 'the input file (or - for stdin)')
   .argument('<outfile>', 'the output file (or - for stdout)')
@@ -165,6 +167,10 @@ Examples:
        |S2|  3.0|  two|
     Same as previous example but abbreviated and pass/deny inverted!
     Also read from stdin and, in this case, rely on the informat default.
+
+  semconvert prov-o-ex2.ttl prov-o-ex2.dot && \
+         dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
+    Generate GraphViz DOT output (and then render it)
 `);
 
 program.parse();
