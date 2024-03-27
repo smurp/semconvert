@@ -9,11 +9,11 @@ Usage: semconvert [options] <infile> <outfile>
 Converts between various RDF and RDF-star syntaxes such as
   nq|nt|rdf|trig|ttl|ttl+star|trig+star|rdf+star
 and can also convert to
-  application/vnd.org-mode (.org)
-  application/json (.json) as used by https://chartjs.org/
+  application/vnd.org-mode (.org) see https://orgmode.org/
+  application/json (.json) see https://chartjs.org/
   text/csv (.csv)
   text/tab-separated-values (.tsv)
-  text/vnd.graphviz (.dot)
+  text/vnd.graphviz (.dot) see https://graphviz.org/
 
 Arguments:
   infile                             the input file (or - for stdin)
