@@ -132,7 +132,7 @@ program
   .option('--po, --passObjLike <RegEx...>', 'permit objects like')
   .option('--de, --denyEntityLike <RegEx...>', 'ignore subjects and objects like')
   .option('--pe, --passEntityLike <RegEx...>', 'permit subjects and objects like')
-  .option('--dot-header <TEXT>', 'add TEXT at the top of GraphViz output')
+  .option('--dot-header <HEAD>', 'add HEAD at the top of GraphViz output')
   .action(semconvert_cli)
   .addHelpText('after', `
 Examples:
@@ -182,8 +182,9 @@ Examples:
          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
     Generate GraphViz DOT output but without node or edge labels
 
-  semconvert --dot-header 'node[color="blue"];'  - out.dot
-    Give all nodes a pink background color
+  semconvert --dot-header 'node[color="blue"];edge[color="red"];label="Hi";' \\
+         - out.dot
+    Set a graph label and defaults for nodes and edges
 `);
 
 program.parse();
