@@ -79,12 +79,15 @@ Examples:
     Same as previous example but abbreviated and pass/deny inverted!
     Also read from stdin and, in this case, rely on the informat default.
 
-  semconvert prov-o-ex2.ttl prov-o-ex2.dot &&          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
+  semconvert prov-o-ex2.ttl prov-o-ex2.dot && \
+         dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
     Generate GraphViz DOT output (and then render it)
 
-  semconvert --squelch prov-o-ex2.ttl prov-o-ex2.dot &&          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
+  semconvert --squelch prov-o-ex2.ttl prov-o-ex2.dot && \
+         dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
     Generate GraphViz DOT output but without node or edge labels
 
   semconvert --dot-header 'node[color="blue"];'  - out.dot
     Give all nodes a pink background color
+
 ```
