@@ -109,7 +109,7 @@ program
      ,'  nq|nt|rdf|trig|ttl|ttl+star|trig+star|rdf+star'
      ,'and can also convert to'
      ,'  application/vnd.org-mode (.org)'
-     ,'  application/json (.json)'
+     ,'  application/json (.json) as used by https://chartjs.org/'
      ,'  text/csv (.csv)'
      ,'  text/tab-separated-values (.tsv)'
      ,'  text/vnd.graphviz (.dot)'

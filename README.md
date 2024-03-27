@@ -10,7 +10,7 @@ Converts between various RDF and RDF-star syntaxes such as
   nq|nt|rdf|trig|ttl|ttl+star|trig+star|rdf+star
 and can also convert to
   application/vnd.org-mode (.org)
-  application/json (.json)
+  application/json (.json) as used by https://chartjs.org/
   text/csv (.csv)
   text/tab-separated-values (.tsv)
   text/vnd.graphviz (.dot)
@@ -37,7 +37,7 @@ Options:
   --po, --passObjLike <RegEx...>     permit objects like
   --de, --denyEntityLike <RegEx...>  ignore subjects and objects like
   --pe, --passEntityLike <RegEx...>  permit subjects and objects like
-  --dot-header <TEXT>                add TEXT at the top of GraphViz output
+  --dot-header <HEAD>                add HEAD at the top of GraphViz output
   -h, --help                         display help for command
 
 Examples:
@@ -87,7 +87,7 @@ Examples:
          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
     Generate GraphViz DOT output but without node or edge labels
 
-  semconvert --dot-header 'node[color="blue"];'  - out.dot
-    Give all nodes a pink background color
-
+  semconvert --dot-header 'node[color="blue"];edge[color="red"];label="Hi";' \
+         - out.dot
+    Set a graph label and defaults for nodes and edges
 ```
