@@ -1,5 +1,5 @@
 
-# semconvert -- transform, filter and process RDF-star
+## semconvert -- transform, filter and process RDF-star
 
 ## semconvert -h
 
@@ -13,24 +13,32 @@ and can also convert to
   application/json (.json)
   text/csv (.csv)
   text/tab-separated-values (.tsv)
+  text/vnd.graphviz (.dot)
 
 Arguments:
-  infile                           the input file
-  outfile                          the output file (or - for stdout)
+  infile                             the input file (or - for stdin)
+  outfile                            the output file (or - for stdout)
 
 Options:
-  -o, --outformat <OF>             the output format
-  -i, --informat <IF>              the input format
-  -v, --verbose                    show details
-  -n, --noprefix                   do not output prefixes
-  -d, --dryrun                     show what will happen but do nothing
-  -s, --stripUrls                  strip http://x.co/wtf#eg http://x.co/a/eg
-                                   http://eg/ to eg
-  --ds, --denySubjLike <RegEx...>  ignore subjects like
-  --ps, --passSubjLike <RegEx...>  permit subjects like
-  --dp, --denyPredLike <RegEx...>  ignore predicates like
-  --pp, --passPredLike <RegEx...>  permit predicates like
-  -h, --help                       display help for command
+  -o, --outformat <OF>               the output format, default text/turtle
+  -i, --informat <IF>                the input format, default text/turtlestar
+  -v, --verbose                      show details
+  -n, --noprefix                     do not output prefixes
+  -d, --dryrun                       show what will happen but do nothing
+  -s, --stripUrls                    strip http://x.co/wtf#eg http://x.co/a/eg
+                                     http://eg/ to eg
+  --squelch                          suppress labels in some outformats, eg
+                                     .dot
+  --ds, --denySubjLike <RegEx...>    ignore subjects like
+  --ps, --passSubjLike <RegEx...>    permit subjects like
+  --dp, --denyPredLike <RegEx...>    ignore predicates like
+  --pp, --passPredLike <RegEx...>    permit predicates like
+  --do, --denyObjLike <RegEx...>     ignore objects like
+  --po, --passObjLike <RegEx...>     permit objects like
+  --de, --denyEntityLike <RegEx...>  ignore subjects and objects like
+  --pe, --passEntityLike <RegEx...>  permit subjects and objects like
+  --dot-header <TEXT>                add TEXT at the top of GraphViz output
+  -h, --help                         display help for command
 
 Examples:
      # input.ttl
@@ -65,8 +73,18 @@ Examples:
        |S3|  6.0|
     Subj or Pred can be passed or denied by space-delimited RegExes
 
-  semconvert --ps S2 --pp Pred1 Pred3 -oorg -s input.ttl -
+  semconvert --ps S2 --pp Pred1 Pred3 -oorg -s - - < input.ttl
        |  |Pred1|Pred3|
        |S2|  3.0|  two|
     Same as previous example but abbreviated and pass/deny inverted!
+    Also read from stdin and, in this case, rely on the informat default.
+
+  semconvert prov-o-ex2.ttl prov-o-ex2.dot &&          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
+    Generate GraphViz DOT output (and then render it)
+
+  semconvert --squelch prov-o-ex2.ttl prov-o-ex2.dot &&          dot -Tpng prov-o-ex2.dot > prov-o-ex2.png
+    Generate GraphViz DOT output but without node or edge labels
+
+  semconvert --dot-header 'node[color="blue"];'  - out.dot
+    Give all nodes a pink background color
 ```
