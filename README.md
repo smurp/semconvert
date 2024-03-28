@@ -1,7 +1,7 @@
 
 ## semconvert -- transform, filter and process RDF-star
 
-## semconvert -h
+### semconvert -h
 
 ```
 Usage: semconvert [options] <infile> <outfile>
@@ -38,6 +38,7 @@ Options:
   --de, --denyEntityLike <RegEx...>  ignore subjects and objects like
   --pe, --passEntityLike <RegEx...>  permit subjects and objects like
   --dot-header <HEAD>                add HEAD at the top of GraphViz output
+  --json-indent <INT>                indentation spaces for JSON.stringify
   -h, --help                         display help for command
 
 Examples:

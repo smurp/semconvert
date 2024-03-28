@@ -102,6 +102,7 @@ function semconvert_cli(infile, outfile, options) {
   }
 }
 
+
 program
   .name('semconvert')
   .description(
@@ -133,6 +134,7 @@ program
   .option('--de, --denyEntityLike <RegEx...>', 'ignore subjects and objects like')
   .option('--pe, --passEntityLike <RegEx...>', 'permit subjects and objects like')
   .option('--dot-header <HEAD>', 'add HEAD at the top of GraphViz output')
+  .option('--json-indent <INT>', 'indentation spaces for JSON.stringify', parseInt)
   .action(semconvert_cli)
   .addHelpText('after', `
 Examples:
