@@ -124,7 +124,7 @@ program
   .option('-d, --dryrun', 'show what will happen but do nothing')
   .option('-s, --stripUrls',
           'strip http://x.co/wtf#eg http://x.co/a/eg http://eg/ to eg')
-  .option('--squelch', 'suppress labels in some outformats, eg .dot')
+  .option('--squelch', 'suppress labels in outformat .dot')
   .option('--ds, --denySubjLike <RegEx...>', 'ignore subjects like')
   .option('--ps, --passSubjLike <RegEx...>', 'permit subjects like')
   .option('--dp, --denyPredLike <RegEx...>', 'ignore predicates like')
