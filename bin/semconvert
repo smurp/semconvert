@@ -6,6 +6,9 @@
 
 import { program } from 'commander';
 import * as fs from 'node:fs';
+import * as https from 'node:https';
+import * as http from 'node:http';
+import * as url from 'node:url';
 import * as path from 'node:path';
 import { semconvert } from '../lib/semconvert.js';
 
@@ -58,12 +61,6 @@ function semconvert_cli(infile, outfile, options) {
     infile, informat, inputFormat,
     outfile, outformat, outputFormat});
 
-  // Ensure infile exists (if it's not stdin)
-  if (infile !== '-' && !fs.existsSync(infile)) {
-    console.error(`Input file "${infile}" not found.`);
-    process.exit(1);
-  }
-
   if (dryrun) process.exit(1); // bail before acting
 
   // Read the input data
@@ -77,9 +74,35 @@ function semconvert_cli(infile, outfile, options) {
       processData(inputData);
     });
   } else {
-    // Read input data from file
-    inputData = fs.readFileSync(infile, 'utf8');
-    processData(inputData);
+    // Check if infile is a URL
+    const parsedUrl = url.parse(infile);
+    const isUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+
+    if (isUrl) {
+      // Fetch data from URL
+      const protocol = parsedUrl.protocol === 'http:' ? http : https;
+      protocol.get(infile, (res) => {
+        let inputData = '';
+        res.on('data', (chunk) => {
+          inputData += chunk;
+        });
+        res.on('end', () => {
+          processData(inputData);
+        });
+      }).on('error', (err) => {
+        console.error(`Error fetching input data from URL: ${err}`);
+        process.exit(1);
+      });
+    } else {
+      // Ensure infile exists (if it's not stdin)
+      if (!fs.existsSync(infile)) {
+        console.error(`Input file "${infile}" not found.`);
+        process.exit(1);
+      }
+      // Read input data from file
+      inputData = fs.readFileSync(infile, 'utf8');
+      processData(inputData);
+    }
   }
 
   function processData(inputData) {
@@ -115,7 +138,7 @@ program
      ,'  text/tab-separated-values (.tsv)'
      ,'  text/vnd.graphviz (.dot) see https://graphviz.org/'
     ].join('\n'))
-  .argument('<infile>', 'the input file (or - for stdin)')
+  .argument('<infile>', 'the input file (or - for stdin) or http{s} url')
   .argument('<outfile>', 'the output file (or - for stdout)')
   .option('-o, --outformat <OF>', 'the output format, default text/turtle')
   .option('-i, --informat <IF>', 'the input format, default text/turtlestar')
@@ -123,7 +146,7 @@ program
   .option('-n, --noprefix', 'do not output prefixes')
   .option('-d, --dryrun', 'show what will happen but do nothing')
   .option('-s, --stripUrls',
-          'strip http://x.co/wtf#eg http://x.co/a/eg http://eg/ to eg')
+          'strip http://x.co/a#eg http://x.co/a/eg http://eg/ to eg')
   .option('--squelch', 'suppress labels in outformat .dot')
   .option('--ds, --denySubjLike <RegEx...>', 'ignore subjects like')
   .option('--ps, --passSubjLike <RegEx...>', 'permit subjects like')
